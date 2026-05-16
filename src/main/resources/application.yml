@@ -1,0 +1,64 @@
+spring:
+  jackson:
+    date-format: dd-MM-yyyy
+    time-zone: Asia/Phnom_Penh
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:postgresql://localhost:5432/M2SWeb-DB
+    username: Vuthy
+    password: Vuthy123
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+app:
+  upload-dir: /uploads/products/
+  base-url: http://192.168.1.99:8887
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+app:
+  upload-dir: /uploads/products/
+  base-url: http://192.168.1.99:8887
+
+---
+spring:
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+
+server:
+  port: 8887
+  address: 0.0.0.0
