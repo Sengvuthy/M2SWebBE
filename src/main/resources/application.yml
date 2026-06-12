@@ -22,14 +22,14 @@ spring:
 
 app:
   upload-dir: /uploads/products/
-  base-url: http://192.168.1.99:8887
+  base-url: http://192.168.1.99:8887   # or http://localhost:8887 if only for your laptop
 
 ---
 spring:
   config:
     activate:
       on-profile: docker
-  datasource:
+  datasource:   # ✅ fixed typo (was datasource:AC)
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
@@ -43,7 +43,7 @@ spring:
 
 app:
   upload-dir: /uploads/products/
-  base-url: https://m2swebbe.onrender.com
+  base-url: http://localhost
 
 ---
 spring:
@@ -59,6 +59,27 @@ logging:
   level:
     org.springframework.security: DEBUG
 
+---
+spring:
+  config:
+    activate:
+      on-profile: render
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+app:
+  upload-dir: /uploads/products/
+  base-url: https://m2swebfe.onrender.com   # frontend URL on Render
+
 server:
-  port: 8887
+  port: ${PORT}
   address: 0.0.0.0

@@ -2,6 +2,7 @@ package SuperiorPro.SuperiorPOS.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -50,6 +51,9 @@ public class Sale {
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
     private LocalTime saleTime;
+    
+    @Column(name = "date_time", nullable = false)
+    private LocalDateTime dateTime;
 
     @Column(name = "customer_id", nullable = false)
     private Long customerId;

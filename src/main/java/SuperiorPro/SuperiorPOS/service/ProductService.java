@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import SuperiorPro.SuperiorPOS.DTO.ProductDTO;
 import SuperiorPro.SuperiorPOS.entity.Product;
 import SuperiorPro.SuperiorPOS.entity.ProductImport;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface ProductService {
 
@@ -20,6 +21,7 @@ public interface ProductService {
     Product getByBarcode(String barcode);
 
     Product updateByBarcode(String barcode, ProductDTO dto);
+    Product updateProductImage(String barcode, MultipartFile file);
 
     Page<Product> searchByNameOrBarcode(String keyword, Pageable pageable);
     Page<Product> getProducts(String name, Pageable pageable);

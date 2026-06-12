@@ -4,14 +4,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 
@@ -61,6 +59,14 @@ public class ExcelSaleImportService {
                     String customer = getCellValue(row, 7);
                     LocalDate saleDate = LocalDate.parse(getCellValue(row, 8));
                     LocalTime saleTime = LocalTime.parse(getCellValue(row, 9));
+                    String dateTimeStr = getCellValue(row, 10);
+
+                    LocalDateTime dateTime = null;
+                    if (dateTimeStr != null && !dateTimeStr.isBlank()) {
+                        dateTime = LocalDateTime.parse(dateTimeStr);
+                    } else {
+                        dateTime = LocalDateTime.of(saleDate, saleTime);
+                    }
 
                     // 🔄 Duplicate check
                     if (saleRepository.existsByInvoiceAndBarcode(invoice, barcode)) {
@@ -85,6 +91,7 @@ public class ExcelSaleImportService {
 
                     sale.setSaleDate(saleDate);
                     sale.setSaleTime(saleTime);
+                    sale.setDateTime(dateTime);
 
                     saleRepository.save(sale);
                     created++;
@@ -110,7 +117,7 @@ public class ExcelSaleImportService {
         String[] expectedHeaders = {
             "Invoice", "Barcode", "Product", "Khmer Name",
             "Units Sold", "Unit Price", "Sold Amount",
-            "Customer", "Sale Date", "Sale Time"
+            "Customer", "Sale Date", "Sale Time", "DateTime"
         };
 
         for (int i = 0; i < expectedHeaders.length; i++) {

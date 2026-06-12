@@ -2,6 +2,7 @@ package SuperiorPro.SuperiorPOS.DTO;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -15,8 +16,8 @@ public class SaleDTO {
     private String customerName;
     private LocalDate saleDate;
     private LocalTime saleTime;
+    private LocalDateTime dateTime;
 
-    // optional single-line fields for one-off sales
     private String barcode;
     private String productName;
     private String khmerName;
@@ -24,6 +25,5 @@ public class SaleDTO {
     private BigDecimal unitPrice;
     private BigDecimal soldAmount;
 
-    // 🔹 list of product lines
     private List<SaleItem> items;
 }

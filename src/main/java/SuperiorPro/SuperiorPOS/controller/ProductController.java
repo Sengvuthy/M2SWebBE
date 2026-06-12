@@ -1,7 +1,10 @@
 package SuperiorPro.SuperiorPOS.controller;
 
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
 
@@ -10,7 +13,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import SuperiorPro.SuperiorPOS.DTO.PageDTO;
@@ -125,6 +136,15 @@ public class ProductController {
             return ResponseEntity.internalServerError().body("❌ Import failed: " + e.getMessage());
         }
     }
+    
+    @PostMapping("/{barcode}/upload-image")
+    public ResponseEntity<String> uploadImage(
+            @PathVariable String barcode,
+            @RequestParam("file") MultipartFile file) {
+
+        Product updated = productService.updateProductImage(barcode, file);
+        return ResponseEntity.ok(updated.getImagePath()); // return filename only
+    }
 
     @PreAuthorize("hasAnyAuthority('ROLE_OWNER','ROLE_ADMIN')")
     @GetMapping("/export")
@@ -150,19 +170,24 @@ public class ProductController {
         return ResponseEntity.ok(productService.getImportHistoryByName(name));
     }
 
-    // ✅ Optional: restrict image upload to admins
+ // ✅ Upload product image
     @PostMapping("/upload-image")
-    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> uploadImage(
+        @RequestParam("file") MultipartFile file,
+        @RequestParam(value = "folder", required = false) String folder) {
         try {
             String baseDir = "/uploads/products/";
+            if (folder != null && !folder.isBlank()) {
+                baseDir += folder + "/";
+            }
             Files.createDirectories(Paths.get(baseDir));
 
             String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
             Path filePath = Paths.get(baseDir, fileName);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            // ✅ Return just the filename
-            return ResponseEntity.ok(fileName);
+            String imageUrl = "/uploads/products/" + (folder != null ? folder + "/" : "") + fileName;
+            return ResponseEntity.ok(imageUrl);
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body("Upload failed: " + e.getMessage());
         }

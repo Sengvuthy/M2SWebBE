@@ -13,6 +13,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.firewall.HttpFirewall;
+import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -35,7 +37,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain chain(HttpSecurity http, AuthenticationManager authManager) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authManager) throws Exception {
         JwtLoginFilter loginFilter = new JwtLoginFilter(authManager, jwtTokenProvider);
         loginFilter.setFilterProcessesUrl("/api/auth/login");
 
@@ -49,6 +51,10 @@ public class SecurityConfig {
             }))
             .addFilterBefore(filterChainExceptionHandler, UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
+            	    // --- Public static resources ---
+            	    .requestMatchers("/uploads/products/**").permitAll()   // ✅ allow images
+            	    .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**", "/js/**", "/css/**", "/assets/**").permitAll()
+
             	    // --- Public endpoints ---
             	    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             	    .requestMatchers("/api/auth/**").permitAll()
@@ -65,12 +71,10 @@ public class SecurityConfig {
             	    .requestMatchers("/api/customers/bind-telegram-by-phone").permitAll()
             	    .requestMatchers(HttpMethod.POST, "/api/customers/webhook").permitAll()
             	    .requestMatchers(HttpMethod.POST, "/api/telegram/webhook").permitAll()
-            	    .requestMatchers("/uploads/**").permitAll()
-            	    .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**", "/js/**", "/css/**", "/assets/**").permitAll()
 
             	    // --- Exchange rate ---
-            	    .requestMatchers(HttpMethod.GET, "/api/exchange-rate").permitAll()   // ✅ allow public GET
-            	    .requestMatchers(HttpMethod.POST, "/api/exchange-rate").hasAnyRole("OWNER","ADMIN") // ✅ restrict POST
+            	    .requestMatchers(HttpMethod.GET, "/api/exchange-rate").permitAll()
+            	    .requestMatchers(HttpMethod.POST, "/api/exchange-rate").hasAnyRole("OWNER","ADMIN")
 
             	    // --- Restricted endpoints ---
             	    .requestMatchers("/api/products/**").hasAnyRole("OWNER","ADMIN")
@@ -108,7 +112,7 @@ public class SecurityConfig {
             "http://192.168.1.55:4200",
             "http://192.168.1.55:8887",
             "http://192.168.1.55",
-            "http://192.168.1.88"
+            "http://192.168.1.99"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
@@ -118,5 +122,12 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
+    }
+
+    @Bean
+    public HttpFirewall allowDoubleSlashFirewall() {
+        StrictHttpFirewall firewall = new StrictHttpFirewall();
+        firewall.setAllowUrlEncodedDoubleSlash(true); // ✅ prevent RequestRejectedException
+        return firewall;
     }
 }

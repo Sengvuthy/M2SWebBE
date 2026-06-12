@@ -73,6 +73,7 @@ public class SaleServiceImpl implements SaleService {
                 sale.setInvoice(invoice);
                 sale.setSaleDate(now.toLocalDate());
                 sale.setSaleTime(now.toLocalTime());
+                sale.setDateTime(now);
                 sale.setCustomerId(customerId);
                 sale.setCustomerName(customerName);
                 sale.setBarcode(product.getBarcode());
@@ -137,11 +138,13 @@ public class SaleServiceImpl implements SaleService {
 
             LocalDate originalDate = existingSales.get(0).getSaleDate();
             LocalTime originalTime = existingSales.get(0).getSaleTime();
+            LocalDateTime originalDateTime = existingSales.get(0).getDateTime();
 
             Sale sale = new Sale();
             sale.setInvoice(saleDTO.getInvoice());
             sale.setSaleDate(originalDate);
             sale.setSaleTime(originalTime);
+            sale.setDateTime(originalDateTime);
             sale.setCustomerId(customerId);
             sale.setCustomerName(customerName);
             sale.setBarcode(product.getBarcode());
@@ -194,20 +197,31 @@ public class SaleServiceImpl implements SaleService {
 
 	@Override
 	public List<InvoiceSummaryDTO> getInvoiceSummaries() {
-		List<Sale> sales = saleRepository.findAll();
-		Map<String, List<Sale>> grouped = sales.stream().collect(Collectors.groupingBy(Sale::getInvoice));
+	    List<Sale> sales = saleRepository.findAll();
+	    Map<String, List<Sale>> grouped = sales.stream()
+	            .collect(Collectors.groupingBy(Sale::getInvoice));
 
-		return grouped.entrySet().stream().map(entry -> {
-			List<Sale> items = entry.getValue();
-			Sale first = items.get(0);
+	    return grouped.entrySet().stream().map(entry -> {
+	        List<Sale> items = entry.getValue();
+	        Sale first = items.get(0);
 
-			BigDecimal total = items.stream().map(Sale::getSoldAmount).filter(Objects::nonNull).reduce(BigDecimal.ZERO,
-					BigDecimal::add);
+	        BigDecimal total = items.stream()
+	                .map(Sale::getSoldAmount)
+	                .filter(Objects::nonNull)
+	                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-			// ✅ Removed sellerName
-			return new InvoiceSummaryDTO(entry.getKey(), first.getCustomerName(), null, // no seller
-					first.getSaleDate(), first.getSaleTime(), items.size(), total);
-		}).sorted((a, b) -> b.getInvoice().compareTo(a.getInvoice())).toList();
+	        return new InvoiceSummaryDTO(
+	                entry.getKey(),
+	                first.getCustomerName(),
+	                first.getSaleDate(),
+	                first.getSaleTime(),
+	                first.getDateTime(),
+	                (long) items.size(),
+	                total
+	        );
+	    })
+	    .sorted((a, b) -> b.getDateTime().compareTo(a.getDateTime()))
+	    .toList();
 	}
 
 	@Override
@@ -251,33 +265,14 @@ public class SaleServiceImpl implements SaleService {
 
 	@Override
 	public Page<InvoiceSummaryDTO> getInvoices(Map<String, String> params) {
-		int page = Integer.parseInt(params.getOrDefault("_page", "1"));
-		int limit = Integer.parseInt(params.getOrDefault("_limit", "5"));
-		String sortBy = params.getOrDefault("_sortBy", "invoice");
-		String sortDir = params.getOrDefault("_sortDir", "desc");
+	    int page = Integer.parseInt(params.getOrDefault("_page", "1"));
+	    int limit = Integer.parseInt(params.getOrDefault("_limit", "30"));
+	    String invoiceFilter = params.get("invoice");
 
-		Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-		Pageable pageable = PageRequest.of(page - 1, limit, sort);
+	    // ✅ No need for manual sort — JPQL already orders by MAX(dateTime)
+	    Pageable pageable = PageRequest.of(page - 1, limit);
 
-		String invoiceFilter = params.get("invoice");
-
-		Page<String> invoicePage = saleRepository.findDistinctInvoices(invoiceFilter, pageable);
-
-		List<InvoiceSummaryDTO> summaries = invoicePage.getContent().stream().map(inv -> {
-			List<Sale> items = saleRepository.findByInvoice(inv);
-			if (items.isEmpty()) {
-				return new InvoiceSummaryDTO(inv, "", null, null, null, 0, BigDecimal.ZERO);
-			}
-			Sale first = items.get(0);
-			BigDecimal total = items.stream().map(Sale::getSoldAmount).filter(Objects::nonNull).reduce(BigDecimal.ZERO,
-					BigDecimal::add);
-
-			// ✅ Removed sellerName
-			return new InvoiceSummaryDTO(inv, first.getCustomerName(), null, // no seller
-					first.getSaleDate(), first.getSaleTime(), items.size(), total);
-		}).toList();
-
-		return new PageImpl<>(summaries, pageable, invoicePage.getTotalElements());
+	    return saleRepository.findInvoiceSummaries(invoiceFilter, pageable);
 	}
 
 	@Override
@@ -360,20 +355,16 @@ public class SaleServiceImpl implements SaleService {
 	}
 
 	private String generateNextInvoice() {
-		Sale lastSale = saleRepository.findTopByOrderByInvoiceDesc();
-		String lastInvoice = (lastSale != null) ? lastSale.getInvoice() : null;
-		int nextNumber = 1;
+        Integer maxNumber = saleRepository.findMaxInvoiceNumber();
+        int nextNumber = (maxNumber == null) ? 1 : maxNumber + 1;
 
-		if (lastInvoice != null && lastInvoice.startsWith("INV-")) {
-			try {
-				nextNumber = Integer.parseInt(lastInvoice.substring(4)) + 1;
-			} catch (NumberFormatException e) {
-				log.warn("⚠️ Invoice format corrupted: {}", lastInvoice);
-			}
-		}
+        // ✅ Reset after 15000
+        if (nextNumber > 15000) {
+            nextNumber = 1;
+        }
 
-		return String.format("INV-%04d", nextNumber);
-	}
+        return String.format("INV-%05d", nextNumber); // always 5 digits
+    }
 
 	private void exportToExcel() {
 		try {

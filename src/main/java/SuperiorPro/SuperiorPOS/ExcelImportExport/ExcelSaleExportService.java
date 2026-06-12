@@ -5,12 +5,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 
@@ -41,11 +36,11 @@ public class ExcelSaleExportService {
             font.setBold(true);
             headerStyle.setFont(font);
 
-            // 🔹 Header row (simplified: no Seller, no receive/change)
+            // 🔹 Header row (no seller, no receive/change)
             String[] headers = {
                 "Invoice", "Barcode", "Product", "Khmer Name",
                 "Units Sold", "Unit Price", "Sold Amount",
-                "Customer", "Sale Date", "Sale Time"
+                "Customer", "Sale Date", "Sale Time", "DateTime"
             };
             Row headerRow = sheet.createRow(0);
             for (int i = 0; i < headers.length; i++) {
@@ -62,7 +57,7 @@ public class ExcelSaleExportService {
                 row.createCell(1).setCellValue(safeString(sale.getBarcode()));
                 row.createCell(2).setCellValue(safeString(sale.getProductName()));
                 row.createCell(3).setCellValue(safeString(sale.getKhmerName()));
-                row.createCell(4).setCellValue(sale.getNumberOfUnit().doubleValue());
+                row.createCell(4).setCellValue(sale.getNumberOfUnit() != null ? sale.getNumberOfUnit().doubleValue() : 0);
                 row.createCell(5).setCellValue(sale.getUnitPrice() != null ? sale.getUnitPrice().doubleValue() : 0);
 
                 BigDecimal amount = sale.getSoldAmount() != null ? sale.getSoldAmount() : BigDecimal.ZERO;
@@ -71,6 +66,7 @@ public class ExcelSaleExportService {
                 row.createCell(7).setCellValue(safeString(sale.getCustomerName()));
                 row.createCell(8).setCellValue(sale.getSaleDate() != null ? sale.getSaleDate().toString() : "");
                 row.createCell(9).setCellValue(sale.getSaleTime() != null ? sale.getSaleTime().toString() : "");
+                row.createCell(10).setCellValue(sale.getDateTime() != null ? sale.getDateTime().toString() : "");
             }
 
             // 🔹 Auto-size columns

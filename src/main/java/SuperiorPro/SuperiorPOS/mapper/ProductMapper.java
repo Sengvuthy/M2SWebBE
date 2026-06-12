@@ -14,11 +14,9 @@ import SuperiorPro.SuperiorPOS.service.util.ProductMapperDecorator;
 @DecoratedWith(ProductMapperDecorator.class)
 public interface ProductMapper {
 
-    Product toProduct(ProductDTO dto);
-
-    @Mapping(target = "categoryName", source = "categoryName")
-    @Mapping(target = "supplierId", source = "supplierId")
     ProductDTO toProductDTO(Product product);
+
+    Product toProduct(ProductDTO dto);
 
     @Mapping(target = "barcode", source = "barcode")
     @Mapping(target = "productName", source = "productName")
