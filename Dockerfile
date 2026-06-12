@@ -18,5 +18,8 @@ RUN fc-cache -f -v
 COPY --from=build /app/target/M2SWebBE-0.0.1-SNAPSHOT.jar app.jar
 
 ENV TZ=Asia/Phnom_Penh
-EXPOSE 8887
+
+# ✅ Do NOT hardcode 8887 — let Render assign the port
+EXPOSE $PORT
+
 ENTRYPOINT ["java", "-jar", "app.jar"]
