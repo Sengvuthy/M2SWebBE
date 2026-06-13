@@ -18,6 +18,7 @@ import SuperiorPro.SuperiorPOS.ExcelImportExport.ExcelCustomerImportService;
 import SuperiorPro.SuperiorPOS.ExcelImportExport.ExcelCustomerImportService.ImportSummary;
 import SuperiorPro.SuperiorPOS.entity.Customer;
 import SuperiorPro.SuperiorPOS.mapper.CustomerMapper;
+import SuperiorPro.SuperiorPOS.repository.CustomerRepository;
 import SuperiorPro.SuperiorPOS.service.CustomerService;
 import SuperiorPro.SuperiorPOS.service.util.PageUtil;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CustomerController {
 
     private final CustomerService customerService;
+    private final CustomerRepository customerRepository;
     private final ExcelCustomerImportService excelCustomerImportService;
     private final ExcelCustomerExportService excelCustomerExportService;
     private final CustomerMapper customerMapper;
@@ -45,10 +47,14 @@ public class CustomerController {
         return ResponseEntity.ok(customerMapper.toDTO(saved));
     }
 
-    // 📞 Search by phone
+    // 📞 Search by phone (normalized)
     @GetMapping("/search-by-phone")
     public ResponseEntity<CustomerDTO> findByPhone(@RequestParam String phone) {
-        return customerService.findByPhone(phone)
+        String normalized = phone.startsWith("0")
+            ? "+855" + phone.substring(1)
+            : phone;
+
+        return customerRepository.findByPhone(normalized)
                 .map(customerMapper::toDTO)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
