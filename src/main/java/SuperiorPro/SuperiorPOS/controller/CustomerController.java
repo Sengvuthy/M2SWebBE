@@ -50,11 +50,7 @@ public class CustomerController {
     // 📞 Search by phone (normalized)
     @GetMapping("/search-by-phone")
     public ResponseEntity<CustomerDTO> findByPhone(@RequestParam String phone) {
-        String normalized = phone.startsWith("0")
-            ? "+855" + phone.substring(1)
-            : phone;
-
-        return customerRepository.findByPhone(normalized)
+        return customerService.findByPhone(phone)
                 .map(customerMapper::toDTO)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
