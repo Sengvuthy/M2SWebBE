@@ -112,7 +112,8 @@ public class SecurityConfig {
             "http://192.168.1.55:4200",
             "http://192.168.1.55:8887",
             "http://192.168.1.55",
-            "http://192.168.1.99"
+            "http://192.168.1.99",
+            "https://m2swebfe.onrender.com"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
