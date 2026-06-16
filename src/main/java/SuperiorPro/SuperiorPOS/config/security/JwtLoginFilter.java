@@ -43,18 +43,16 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
 
 	@Override
 	protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
-	        Authentication auth) throws IOException {
-	    List<String> roles = auth.getAuthorities().stream()
-	            .map(GrantedAuthority::getAuthority)
-	            .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r.toUpperCase())
-	            .collect(Collectors.toList());
+			Authentication auth) throws IOException {
+		List<String> roles = auth.getAuthorities().stream().map(GrantedAuthority::getAuthority)
+				.collect(Collectors.toList());
 
-	    String accessToken = jwtTokenProvider.generateAccessToken(auth.getName(), roles);
-	    String refreshToken = jwtTokenProvider.generateRefreshToken(auth.getName(), roles);
+		String accessToken = jwtTokenProvider.generateAccessToken(auth.getName(), roles);
+		String refreshToken = jwtTokenProvider.generateRefreshToken(auth.getName(), roles);
 
-	    response.setHeader("Authorization", "Bearer " + accessToken);
-	    response.setContentType("application/json");
-	    response.getWriter().write(new ObjectMapper()
-	            .writeValueAsString(new AuthResponse(accessToken, refreshToken, "✅ Login successful")));
+		response.setHeader("Authorization", "Bearer " + accessToken);
+		response.setContentType("application/json");
+		response.getWriter().write(new ObjectMapper()
+				.writeValueAsString(new AuthResponse(accessToken, refreshToken, "✅ Login successful")));
 	}
 }
