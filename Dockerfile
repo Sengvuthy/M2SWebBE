@@ -1,25 +1,17 @@
-# Stage 1: Build the JAR
-FROM eclipse-temurin:24-jdk-alpine AS build
+# Stage 1: Build Angular app
+FROM node:22 AS build
 WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
 COPY . .
-RUN chmod +x mvnw
-RUN ./mvnw clean package -DskipTests
+RUN npx ng build --configuration production
 
-# Stage 2: Run the app
-FROM eclipse-temurin:24-jdk-alpine
-WORKDIR /app
+# Stage 2: Serve with Nginx
+FROM nginx:alpine
 
-# Copy fonts
-COPY fonts/NotoSansKhmer-Regular.ttf /usr/share/fonts/
-COPY fonts/NotoSans-Regular.ttf /usr/share/fonts/
-RUN fc-cache -f -v
+# Copy Angular build output into Nginx's default html directory
+COPY --from=build /app/dist/M2SWebFE /usr/share/nginx/html
 
-# Copy built JAR from the build stage
-COPY --from=build /app/target/M2SWebBE-0.0.1-SNAPSHOT.jar app.jar
-
-ENV TZ=Asia/Phnom_Penh
-
-# ✅ Do NOT hardcode 8887 — let Render assign the port
-EXPOSE $PORT
-
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Copy your custom Nginx config into the container
+COPY ./nginx.conf /etc/nginx/conf.d/default.conf
