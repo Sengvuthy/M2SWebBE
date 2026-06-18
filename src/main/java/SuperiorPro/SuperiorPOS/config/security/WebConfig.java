@@ -26,11 +26,13 @@ public class WebConfig implements WebMvcConfigurer {
         }
 
         if (isDocker) {
+            // ✅ Docker/Render profile → use custom folder /m2sweb-img/uploads/products/
             registry.addResourceHandler("/uploads/products/**")
                     .addResourceLocations("file:/m2sweb-img/uploads/products/");
         } else {
+            // ✅ Local Windows dev → use OneDrive path
             registry.addResourceHandler("/uploads/products/**")
-                    .addResourceLocations("file:///C:/Users/PC2/OneDrive/Superior Shop/SuperiorPOS-Files/m2sweb-img/uploads/products/");
+                    .addResourceLocations("file:///C:/Users/PC2/OneDrive/Superior Shop/SuperiorPOS-Files/uploads/products/");
         }
     }
 }
